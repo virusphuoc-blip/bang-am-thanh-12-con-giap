@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bắp và 12 Con Giáp — Bảng âm thanh con vật</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+    background: linear-gradient(180deg, #fff8e1 0%, #e3f2fd 100%);
+    min-height: 100vh;
+    padding: 16px;
+    color: #333;
+  }
+  header { text-align: center; margin: 12px 0 8px; }
+  header h1 {
+    font-size: clamp(1.6rem, 5vw, 2.6rem);
+    color: #e65100;
+    line-height: 1.2;
+  }
+  header p { font-size: clamp(1rem, 3vw, 1.25rem); color: #555; margin-top: 6px; }
+  .controls { text-align: center; margin: 14px 0 20px; }
+  .controls button {
+    font-size: 1.15rem;
+    font-weight: bold;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 999px;
+    background: #ff7043;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,.2);
+  }
+  .controls button:active { transform: scale(.96); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .card {
+    border: none;
+    border-radius: 20px;
+    padding: 18px 10px 16px;
+    cursor: pointer;
+    text-align: center;
+    color: #fff;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    transition: transform .12s ease, box-shadow .12s ease;
+    min-height: 170px;
+  }
+  .card:hover { transform: translateY(-3px); }
+  .card:active { transform: scale(.95); }
+  .card.playing {
+    animation: pulse .5s ease-in-out infinite alternate;
+    box-shadow: 0 0 0 4px #fff, 0 0 0 8px #ffca28, 0 6px 16px rgba(0,0,0,.25);
+  }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+  .card .emoji { font-size: 3.4rem; line-height: 1.1; display: block; }
+  .card .zodiac {
+    display: inline-block;
+    font-size: .8rem;
+    background: rgba(255,255,255,.35);
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-top: 8px;
+  }
+  .card .name { display: block; font-size: 1.35rem; font-weight: bold; margin-top: 4px; }
+  .card .sound { display: block; font-size: 1.05rem; margin-top: 4px; font-style: italic; }
+  .card .hint { display: block; font-size: .8rem; opacity: .85; margin-top: 6px; }
+  footer {
+    text-align: center;
+    margin: 28px auto 10px;
+    max-width: 960px;
+    font-size: .95rem;
+    color: #666;
+    line-height: 1.6;
+  }
+  footer a { color: #d32f2f; font-weight: bold; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐭 Bắp và 12 Con Giáp 🐷</h1>
+  <p>Bảng âm thanh con vật — chạm vào con vật để nghe tiếng kêu thật!</p>
+</header>
+
+<div class="controls">
+  <button id="play-all" type="button">▶ Nghe tất cả</button>
+</div>
+
+<main class="grid" id="board"></main>
+
+<footer>
+  <p>Âm thanh con vật thật, lấy từ phim hoạt hình
+    <strong>“Bắp và 12 Con Giáp”</strong> trên kênh YouTube
+    <a href="https://www.youtube.com/@vhphuocmedia" target="_blank" rel="noopener">VH Phước</a> 📺</p>
+  <p>Một số tiếng kêu được cấp phép CC BY / CC BY-SA — xem chi tiết trong file README.md kèm theo.</p>
+</footer>
+
+<script>
+const ANIMALS = [
+  { id: "chuot", emoji: "🐭", zodiac: "Tý",   name: "Chuột", file: "sounds/chuot.mp3", sound: "Chít chít!", color: "#8d6e63" },
+  { id: "trau",  emoji: "🐮", zodiac: "Sửu", name: "Trâu",  file: "sounds/trau.mp3",  sound: "Mò ò!",      color: "#6d4c41" },
+  { id: "ho",    emoji: "🐯", zodiac: "Dần", name: "Hổ",   file: "sounds/ho.mp3",    sound: "Grừ grừ!",  color: "#ef6c00" },
+  { id: "meo",   emoji: "🐱", zodiac: "Mão", name: "Mèo",  file: "sounds/meo.mp3",   sound: "Meo meo!",  color: "#f06292" },
+  { id: "rong",  emoji: "🐲", zodiac: "Thìn", name: "Rồng", file: "sounds/rong.mp3",  sound: "Gào!",      color: "#7b1fa2" },
+  { id: "ran",   emoji: "🐍", zodiac: "Tỵ",  name: "Rắn",  file: "sounds/ran.mp3",   sound: "Xì xì!",    color: "#43a047" },
+  { id: "ngua",  emoji: "🐴", zodiac: "Ngọ", name: "Ngựa", file: "sounds/ngua.mp3",  sound: "Hí hí!",    color: "#795548" },
+  { id: "de",    emoji: "🐐", zodiac: "Mùi", name: "Dê",   file: "sounds/de.mp3",    sound: "Be be!",    color: "#5c6bc0" },
+  { id: "khi",   emoji: "🐵", zodiac: "Thân", name: "Khỉ",  file: "sounds/khi.mp3",   sound: "Khẹc khẹc!", color: "#8e24aa" },
+  { id: "ga",    emoji: "🐓", zodiac: "Dậu", name: "Gà",   file: "sounds/ga.mp3",    sound: "Ò ó o!",    color: "#d81b60" },
+  { id: "cho",   emoji: "🐶", zodiac: "Tuất", name: "Chó",  file: "sounds/cho.mp3",   sound: "Gâu gâu!",  color: "#fb8c00" },
+  { id: "lon",   emoji: "🐷", zodiac: "Hợi", name: "Lợn",  file: "sounds/lon.mp3",   sound: "Ụt ịt!",    color: "#ec407a" }
+];
+
+const board = document.getElementById("board");
+const audios = {};
+let currentId = null;
+let playAllMode = false;
+
+ANIMALS.forEach(a => {
+  const audio = new Audio(a.file);
+  audio.preload = "auto";
+  audios[a.id] = audio;
+  audio.addEventListener("ended", () => {
+    document.getElementById("card-" + a.id).classList.remove("playing");
+    if (currentId === a.id) currentId = null;
+  });
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "card";
+  btn.id = "card-" + a.id;
+  btn.style.background = a.color;
+  btn.setAttribute("aria-label", a.name + " kêu " + a.sound);
+  btn.innerHTML =
+    '<span class="emoji">' + a.emoji + '</span>' +
+    '<span class="zodiac">' + a.zodiac + '</span>' +
+    '<span class="name">' + a.name + '</span>' +
+    '<span class="sound">“' + a.sound + '”</span>' +
+    '<span class="hint">👆 Chạm để nghe</span>';
+  btn.addEventListener("click", () => playOne(a.id));
+  board.appendChild(btn);
+});
+
+function stopCurrent() {
+  if (currentId) {
+    audios[currentId].pause();
+    audios[currentId].currentTime = 0;
+    const el = document.getElementById("card-" + currentId);
+    if (el) el.classList.remove("playing");
+    currentId = null;
+  }
+}
+
+function playOne(id) {
+  playAllMode = false;
+  stopCurrent();
+  const audio = audios[id];
+  currentId = id;
+  document.getElementById("card-" + id).classList.add("playing");
+  audio.play().catch(() => {
+    document.getElementById("card-" + id).classList.remove("playing");
+    currentId = null;
+  });
+}
+
+document.getElementById("play-all").addEventListener("click", async () => {
+  stopCurrent();
+  playAllMode = true;
+  for (const a of ANIMALS) {
+    if (!playAllMode) break;
+    currentId = a.id;
+    const card = document.getElementById("card-" + a.id);
+    card.classList.add("playing");
+    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    try {
+      await audios[a.id].play();
+      await new Promise(res => {
+        audios[a.id].addEventListener("ended", res, { once: true });
+      });
+    } catch (e) { /* skip a file that fails to play */ }
+    card.classList.remove("playing");
+  }
+  currentId = null;
+  playAllMode = false;
+});
+</script>
+</body>
+</html>
