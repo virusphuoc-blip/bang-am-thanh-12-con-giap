@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://virusphuoc-blip.github.io/bang-am-thanh-12-con-giap/sitemap.xml
